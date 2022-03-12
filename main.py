@@ -1,6 +1,9 @@
 import socket
+from scraper import *
 
 if __name__ == "__main__":
+    classify_websites()
+
     HOST = "localhost"
     PORT = 5000
     response = b"""HTTP/1.1 200 OK\n\n<h1>Hello, World</h1>"""
