@@ -9,7 +9,7 @@ from nltk import WordNetLemmatizer, tokenize
 
 def register_topic(topic):
     topic += "\n"
-    with open(f"topics.txt", 'a+') as file:
+    with open(f"meta/topics.txt", 'a+') as file:
         file.seek(0)
         if topic in file.readlines():
             return
@@ -28,18 +28,15 @@ def log_info(topic, info):
             return
 
 
-def classify_websites():
-    lines = open("websites.txt", "r").read().splitlines()
+def scrape_info():
+    lines = open("meta/websites.txt", "r").read().splitlines()
     url = random.choice(lines)
 
-    print(url)
     webpage = BeautifulSoup(requests.get(url).content, "html.parser")
     lemmatizer = WordNetLemmatizer()
 
     for result in webpage.find_all("p"):
         information = re.sub(r"\[\d+\]", "", result.text)
-
-        print(information)
 
         words = tokenize.word_tokenize(information)
         words = [lemmatizer.lemmatize(word) for word in words]
@@ -51,5 +48,48 @@ def classify_websites():
         )
 
         for topic in keywords:
-            log_info(topic, information)
             print(topic)
+            log_info(topic, information)
+
+
+def is_valid_link(link):
+    if link.find("http") != -1:
+        return False
+    if link.find("/wiki/") != 0:
+        return False
+    if link.find(":") != -1:
+        return False
+    if link.find("#") != -1:
+        return False
+    if link.find(".") == -1:
+        return False
+
+    return True
+
+
+def log_site(site):
+    site += '\n'
+
+    with open("meta/websites.txt", 'a+') as file:
+        file.seek(0)
+        if site in file.readlines():
+            return
+        try:
+            file.write(site)
+            print(site)
+        except UnicodeEncodeError:
+            return
+
+
+def search_sites():
+    lines = open("meta/websites.txt", "r").read().splitlines()
+    url = random.choice(lines)
+
+    webpage = BeautifulSoup(requests.get(url).text, "html.parser")
+
+    for link in webpage.find_all('a'):
+        link = str(link.get('href'))
+        print(link)
+
+        if is_valid_link(link):
+            log_site(f"https://en.wikipedia.org{link}")
