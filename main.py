@@ -4,9 +4,13 @@ import socket
 
 def display_data(matches):
     result = ""
-    with open(f"info/{matches[0]}.site", "r") as file:
-        for fact in file.readlines():
-            result += fact + "\n"
+    try:
+        with open(f"info/{matches[0]}.site", "r") as file:
+            for fact in file.readlines():
+                result += fact + "\n"
+
+    except FileNotFoundError:
+        pass
 
     return matches[0], result
 
@@ -16,14 +20,18 @@ def search_topic(search_key):
         topics = file.read().splitlines()
 
     high_matches = difflib.get_close_matches(search_key, topics, cutoff=0.75)
-    low_matches = list(set(difflib.get_close_matches(search_key, topics, cutoff=0.5)) - set(high_matches))
+    low_matches = [x for x in difflib.get_close_matches(search_key, topics, cutoff=0.5) if x not in high_matches]
+
+    high_matches = [x.lower() for x in high_matches]
+    low_matches = [x.lower() for x in low_matches]
 
     if len(high_matches) != 0:
         if high_matches[0] == search_key:
-            key, result = display_data(low_matches)
+            key, result = display_data(high_matches)
             return key, result, "Exact Match"
+
         else:
-            key, result = display_data(low_matches)
+            key, result = display_data(high_matches[1:])
             return key, result, "Close Match"
 
     elif len(low_matches) != 0:
@@ -35,6 +43,7 @@ def search_topic(search_key):
 
 
 if __name__ == "__main__":
+    # Open A Connection To The Server
     HOST = "localhost"
     PORT = 5000
 
@@ -48,13 +57,19 @@ if __name__ == "__main__":
         client_connection, client_address = listener.accept()
         data = client_connection.recv(1024).splitlines()
 
-        resource = data[0].decode('utf-8')
+        # Process The Incoming Data And Reject Requests For Non GET Requests
+
+        try:
+            resource = data[0].decode('utf-8')
+        except IndexError:
+            continue
 
         if resource.find("GET") == -1:
             continue
 
         information = resource.split(" ")[1][1:]
 
+        # Ignore Requests To The Favicon
         if information.endswith(".ico"):
             continue
 
