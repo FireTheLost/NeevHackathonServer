@@ -25,24 +25,27 @@ def search_topic(search_key):
     high_matches = [x.lower() for x in high_matches]
     low_matches = [x.lower() for x in low_matches]
 
-    if len(high_matches) != 0:
-        if high_matches[0] == search_key:
-            key, result = display_data(high_matches)
-            return key, result, "Exact Match"
+    try:
+        if len(high_matches) != 0:
+            if high_matches[0] == search_key:
+                key, result = display_data(high_matches)
+                return key, result, "Exact Match"
+
+            else:
+                key, result = display_data(high_matches[1:])
+                return key, result, "Close Match"
+
+        elif len(low_matches) != 0:
+            key, result = display_data(low_matches)
+            return key, result, "Low Match"
 
         else:
-            key, result = display_data(high_matches[1:])
-            return key, result, "Close Match"
-
-    elif len(low_matches) != 0:
-        key, result = display_data(low_matches)
-        return key, result, "Low Match"
-
-    else:
+            return search_key, "No Matches Were Found.", "No Match"
+    except Exception:
         return search_key, "No Matches Were Found.", "No Match"
 
 
-if __name__ == "__main__":
+def main():
     # Open A Connection To The Server
     HOST = "localhost"
     PORT = 5000
@@ -57,6 +60,9 @@ if __name__ == "__main__":
         client_connection, client_address = listener.accept()
         data = client_connection.recv(1024).splitlines()
 
+        for line in data:
+            print(line.decode("utf-8"))
+
         # Process The Incoming Data And Reject Requests For Non GET Requests
 
         try:
@@ -69,7 +75,7 @@ if __name__ == "__main__":
 
         information = resource.split(" ")[1][1:]
 
-        # Ignore Requests To The Favicon
+        # Ignore Requests For The Favicon
         if information.endswith(".ico"):
             continue
 
@@ -79,3 +85,7 @@ if __name__ == "__main__":
 
         client_connection.sendall(response.encode())
         client_connection.close()
+
+
+if __name__ == "__main__":
+    main()
